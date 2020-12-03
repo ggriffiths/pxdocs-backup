@@ -49,3 +49,29 @@ Portworx has tested and recommends the following CSI drivers for use with your K
     ![Enter the cluster details](/img/enter-other-kubernetes-distributions-cluster-details.png)
 
 3. Select the **Submit** button
+
+## CSI driver specific parameters
+PX-Backup utilizes a `VolumeSnapshotClass` for performing generic CSI backups and restores. PX-Backup looks for a VolumeSnapshotClass with the naming scheme `"stork-csi-snapshot-class-${DRIVER_NAME}"` where `DRIVER_NAME` is the name of the CSI driver. You can find the CSI driver(s) for your cluster by running the following command:
+```
+kubectl get csidrivers
+```
+
+See your CSI driver documentation to determine which parameters are needed in the VolumeSnapshotClass. If the CSI driver you're using requires `VolumeSnapshotClass` parameters in order to function correctly, you will need to create or update this object. We will create this VolumeSnapshotClass with default values if it does not exist.
+For fresh installs, create a VolumeSnapshotClass with the name `"stork-csi-snapshot-class-${DRIVER_NAME}"` based on your CSI driver documentation. Make sure all necessary parameters are added to this VolumeSnapshotClass.
+
+If a CSI backup has already been attempted and failed, complete the following steps to edit the default VolumeSnapshotClass for your CSI driver:
+1. Find the CSI driver(s) for your volumes
+```
+kubectl get csidrivers
+```
+2. Edit the VolumeSnapshotClass object for your CSI driver
+```
+CSI_DRIVER_NAME=<csi_driver_name>
+kubectl edit volumesnapshotclass stork-csi-snapshot-class-${CSI_DRIVER_NAME}
+```
+3. Add the necessary parameters to this object based on the documentation for your CSI driver(s)
+4. PX-Backup will now use these VolumeSnapshotClass parameters when performing backups and restores.
+
+{{<info>}}
+**NOTE:** PX-Backup always overrides the `VolumeSnapshotClass` with a deletion policy as retain to prevent data loss.
+{{</info>}}
